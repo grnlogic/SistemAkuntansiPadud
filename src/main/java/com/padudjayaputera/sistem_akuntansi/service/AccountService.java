@@ -14,6 +14,12 @@ public interface AccountService {
     Account createAccount(Account account);
 
     /**
+     * Mendapatkan semua akun (untuk SUPER_ADMIN).
+     * @return Daftar semua akun.
+     */
+    List<Account> getAllAccounts();
+
+    /**
      * Mendapatkan semua akun yang termasuk dalam satu divisi.
      * @param divisionId ID dari divisi.
      * @return Daftar akun.
@@ -28,16 +34,16 @@ public interface AccountService {
     Account getAccountByCode(String accountCode);
 
     /**
-     * Memperbarui data akun berdasarkan ID.
-     * @param id ID dari akun yang akan diperbarui.
-     * @param accountDetails data akun yang baru.
-     * @return Akun yang telah diperbarui.
+     * Update akun existing.
+     * @param id ID akun.
+     * @param accountDetails detail akun yang akan diupdate.
+     * @return Akun yang telah diupdate.
      */
     Account updateAccount(Integer id, Account accountDetails);
 
     /**
-     * Menghapus akun berdasarkan ID.
-     * @param id ID dari akun yang akan dihapus.
+     * Hapus akun.
+     * @param id ID akun yang akan dihapus.
      */
     void deleteAccount(Integer id);
 }

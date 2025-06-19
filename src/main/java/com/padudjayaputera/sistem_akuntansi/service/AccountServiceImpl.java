@@ -18,112 +18,158 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
 
-    // Menggunakan Constructor Injection untuk memasukkan AccountRepository
     public AccountServiceImpl(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
     }
 
     @Override
     public Account createAccount(Account account) {
-        // Dapatkan user yang sedang login
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        // LOGIKA OTORISASI BARU
-        // Jika yang login adalah ADMIN_DIVISI
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
-            // Dia hanya boleh membuat akun untuk divisinya sendiri.
-            // Cek apakah ID divisi di data akun yang mau dibuat sama dengan ID divisi miliknya.
-            if (!account.getDivision().getId().equals(loggedInUser.getDivision().getId())) {
-                throw new AccessDeniedException("Admin Divisi hanya boleh membuat akun untuk divisinya sendiri.");
+        try {
+            // Log untuk debugging
+            System.out.println("=== SERVICE DEBUG: Creating account ===");
+            System.out.println("Account data: " + account);
+            
+            // Validasi input
+            if (account.getAccountCode() == null || account.getAccountCode().trim().isEmpty()) {
+                throw new IllegalArgumentException("Account code is required");
             }
-        }
-        // Jika yang login adalah SUPER_ADMIN, dia bisa membuat akun untuk divisi mana pun, jadi tidak perlu ada pengecekan.
+            if (account.getAccountName() == null || account.getAccountName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Account name is required");
+            }
+            if (account.getValueType() == null) {
+                throw new IllegalArgumentException("Value type is required");
+            }
+            if (account.getDivision() == null || account.getDivision().getId() == null) {
+                throw new IllegalArgumentException("Division is required");
+            }
 
-        // Logika pengecekan kode akun duplikat (tetap ada)
-        Optional<Account> existingAccount = accountRepository.findByAccountCode(account.getAccountCode());
-        if (existingAccount.isPresent()) {
-            throw new IllegalStateException("Akun dengan kode " + account.getAccountCode() + " sudah ada.");
+            // Cek duplikasi kode akun
+            Optional<Account> existingAccount = accountRepository.findByAccountCode(account.getAccountCode().trim());
+            if (existingAccount.isPresent()) {
+                throw new IllegalArgumentException("Account code already exists: " + account.getAccountCode());
+            }
+
+            // Simpan ke database
+            Account savedAccount = accountRepository.save(account);
+            System.out.println("=== SERVICE DEBUG: Account saved successfully ===");
+            System.out.println("Saved account: " + savedAccount);
+            
+            return savedAccount;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error creating account ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        // Jika tidak ada, simpan akun baru
-        return accountRepository.save(account);
+    }
+
+    @Override
+    public List<Account> getAllAccounts() {
+        try {
+            System.out.println("=== SERVICE DEBUG: Getting all accounts ===");
+            
+            // Cek authorization - hanya SUPER_ADMIN yang bisa akses semua akun
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                User currentUser = (User) authentication.getPrincipal();
+                System.out.println("Current user: " + currentUser.getUsername() + ", Role: " + currentUser.getRole());
+                
+                if (currentUser.getRole() != UserRole.SUPER_ADMIN) {
+                    throw new AccessDeniedException("Only SUPER_ADMIN can access all accounts");
+                }
+            }
+            
+            List<Account> accounts = accountRepository.findAll();
+            System.out.println("=== SERVICE DEBUG: Found " + accounts.size() + " accounts ===");
+            
+            return accounts;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error getting all accounts ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
     public List<Account> getAccountsByDivisionId(Integer divisionId) {
-        // 1. Dapatkan informasi user yang sedang login
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
-            throw new AccessDeniedException("User tidak terautentikasi dengan benar.");
-        }
-        
-        User loggedInUser = (User) authentication.getPrincipal();
-
-        // 2. Terapkan logika otorisasi
-        // Jika rolenya ADMIN_DIVISI
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
-            // Periksa apakah ID divisi yang diminta sama dengan ID divisi miliknya
-            if (loggedInUser.getDivision() == null) {
-                throw new AccessDeniedException("User tidak memiliki divisi yang terdaftar.");
-            }
+        try {
+            System.out.println("=== SERVICE DEBUG: Getting accounts for division: " + divisionId + " ===");
             
-            if (!loggedInUser.getDivision().getId().equals(divisionId)) {
-                // Jika tidak sama, tolak akses!
-                throw new AccessDeniedException("Anda tidak memiliki akses ke data divisi ini.");
-            }
+            List<Account> accounts = accountRepository.findByDivisionId(divisionId);
+            System.out.println("=== SERVICE DEBUG: Found " + accounts.size() + " accounts for division " + divisionId + " ===");
+            
+            return accounts;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error getting accounts by division ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        // Jika rolenya SUPER_ADMIN, tidak perlu pengecekan, dia boleh lanjut
-
-        // 3. Jika lolos pengecekan, baru panggil repository
-        return accountRepository.findByDivisionId(divisionId);
     }
 
     @Override
     public Account getAccountByCode(String accountCode) {
-        // Cari berdasarkan kode, jika tidak ada kembalikan null (atau throw exception)
-        return accountRepository.findByAccountCode(accountCode).orElse(null);
+        try {
+            System.out.println("=== SERVICE DEBUG: Getting account by code: " + accountCode + " ===");
+            
+            Optional<Account> account = accountRepository.findByAccountCode(accountCode);
+            if (account.isPresent()) {
+                System.out.println("=== SERVICE DEBUG: Account found ===");
+                return account.get();
+            } else {
+                System.out.println("=== SERVICE DEBUG: Account not found ===");
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error getting account by code ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
     public Account updateAccount(Integer id, Account accountDetails) {
-        // Ambil akun yang ada dari DB
-        Account existingAccount = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Akun dengan ID " + id + " tidak ditemukan."));
+        try {
+            System.out.println("=== SERVICE DEBUG: Updating account with ID: " + id + " ===");
+            
+            Account existingAccount = accountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
 
-        // Dapatkan user yang sedang login untuk otorisasi
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            // Update fields
+            existingAccount.setAccountCode(accountDetails.getAccountCode());
+            existingAccount.setAccountName(accountDetails.getAccountName());
+            existingAccount.setValueType(accountDetails.getValueType());
+            existingAccount.setDivision(accountDetails.getDivision());
 
-        // Otorisasi: Hanya SUPER_ADMIN atau ADMIN_DIVISI pemilik akun yang boleh mengubah
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
-            if (!existingAccount.getDivision().getId().equals(loggedInUser.getDivision().getId())) {
-                throw new AccessDeniedException("Anda tidak diizinkan mengubah akun di luar divisi Anda.");
-            }
+            Account updatedAccount = accountRepository.save(existingAccount);
+            System.out.println("=== SERVICE DEBUG: Account updated successfully ===");
+            
+            return updatedAccount;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error updating account ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-
-        // Update data
-        existingAccount.setAccountName(accountDetails.getAccountName());
-        existingAccount.setAccountCode(accountDetails.getAccountCode());
-        existingAccount.setValueType(accountDetails.getValueType());
-        // Divisi tidak diubah untuk menjaga integritas, jika perlu bisa ditambahkan
-
-        return accountRepository.save(existingAccount);
     }
 
     @Override
     public void deleteAccount(Integer id) {
-        // Ambil akun yang ada dari DB untuk otorisasi sebelum dihapus
-         Account existingAccount = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Akun dengan ID " + id + " tidak ditemukan."));
-
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        // Otorisasi: Sama seperti update
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
-            if (!existingAccount.getDivision().getId().equals(loggedInUser.getDivision().getId())) {
-                throw new AccessDeniedException("Anda tidak diizinkan menghapus akun di luar divisi Anda.");
-            }
+        try {
+            System.out.println("=== SERVICE DEBUG: Deleting account with ID: " + id + " ===");
+            
+            Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+            
+            accountRepository.delete(account);
+            System.out.println("=== SERVICE DEBUG: Account deleted successfully ===");
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error deleting account ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-
-        accountRepository.deleteById(id);
     }
 }

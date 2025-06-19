@@ -1,5 +1,7 @@
 package com.padudjayaputera.sistem_akuntansi.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,7 @@ import lombok.Setter;
 @Table(name = "divisions")
 @Getter
 @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Division {
 
     @Id
@@ -21,4 +24,12 @@ public class Division {
 
     @Column(name = "name", nullable = false, unique = true)
     private String name;
+
+    @Override
+    public String toString() {
+        return "Division{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }
