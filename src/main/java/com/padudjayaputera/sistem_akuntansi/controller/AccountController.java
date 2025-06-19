@@ -1,8 +1,11 @@
 package com.padudjayaputera.sistem_akuntansi.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -195,7 +198,7 @@ public class AccountController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteAccount(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteAccount(@PathVariable Integer id) {
         try {
             System.out.println("=== CONTROLLER DEBUG: DELETE /accounts/" + id + " called ===");
             
@@ -203,11 +206,26 @@ public class AccountController {
             
             System.out.println("=== CONTROLLER DEBUG: Account deleted successfully ===");
             return ResponseEntity.ok().build();
+        } catch (DataIntegrityViolationException e) {
+            System.err.println("=== CONTROLLER ERROR: Foreign key constraint violation ===");
+            
+            // Return user-friendly error message
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "CONSTRAINT_VIOLATION");
+            errorResponse.put("message", "Tidak dapat menghapus akun karena masih digunakan dalam entri harian");
+            errorResponse.put("details", "Hapus terlebih dahulu semua entri harian yang menggunakan akun ini");
+            
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (Exception e) {
             System.err.println("=== CONTROLLER ERROR: Error deleting account ===");
             System.err.println("Error message: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "INTERNAL_ERROR");
+            errorResponse.put("message", "Terjadi kesalahan internal server");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 }
