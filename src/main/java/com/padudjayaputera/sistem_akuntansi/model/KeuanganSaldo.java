@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -18,7 +19,13 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "keuangan_saldo")
+@Table(name = "keuangan_saldo",
+       indexes = {
+           @Index(name = "idx_keuangan_saldo_account_tanggal", columnList = "account_id, tanggal_transaksi"),
+           @Index(name = "idx_keuangan_saldo_latest", columnList = "account_id, tanggal_transaksi DESC, created_at DESC")
+       }
+       // ✅ REMOVED: uniqueConstraints to allow multiple records per account per day
+)
 @Data
 public class KeuanganSaldo {
 
@@ -66,24 +73,18 @@ public class KeuanganSaldo {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // ✅ Helper method untuk menghitung saldo akhir
+    // ✅ Calculate saldo akhir automatically
     public BigDecimal getSaldoAkhir() {
-        BigDecimal penerimaan = this.penerimaan != null ? this.penerimaan : BigDecimal.ZERO;
-        BigDecimal pengeluaran = this.pengeluaran != null ? this.pengeluaran : BigDecimal.ZERO;
+        if (saldoAwal == null) saldoAwal = BigDecimal.ZERO;
+        if (penerimaan == null) penerimaan = BigDecimal.ZERO;
+        if (pengeluaran == null) pengeluaran = BigDecimal.ZERO;
+        
         return saldoAwal.add(penerimaan).subtract(pengeluaran);
     }
-
-    // ✅ Helper method untuk status cash
-    public CashStatus getCashStatus() {
-        BigDecimal saldoAkhir = getSaldoAkhir();
-        if (saldoAkhir.compareTo(BigDecimal.ZERO) < 0) return CashStatus.DEFICIT;
-        if (saldoAkhir.compareTo(BigDecimal.valueOf(1000000)) < 0) return CashStatus.LOW_CASH;
-        if (saldoAkhir.compareTo(BigDecimal.valueOf(10000000)) < 0) return CashStatus.NORMAL_CASH;
-        return CashStatus.HIGH_CASH;
-    }
-
-    // ✅ Enum untuk status cash
-    public enum CashStatus {
-        DEFICIT, LOW_CASH, NORMAL_CASH, HIGH_CASH
+    
+    // ✅ Helper method untuk display
+    public String getTransactionSummary() {
+        return String.format("Saldo Awal: %s, Penerimaan: %s, Pengeluaran: %s, Saldo Akhir: %s", 
+                saldoAwal, penerimaan, pengeluaran, getSaldoAkhir());
     }
 }

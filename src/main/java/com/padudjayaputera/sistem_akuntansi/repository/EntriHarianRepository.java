@@ -42,4 +42,28 @@ public interface EntriHarianRepository extends JpaRepository<EntriHarian, Intege
      */
     @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId ORDER BY e.createdAt DESC")
     List<EntriHarian> findAllByTanggalLaporanAndAccountId(@Param("tanggal") LocalDate tanggal, @Param("accountId") Integer accountId);
+    
+    /**
+     * ✅ NEW: Mencari entri berdasarkan tanggal, account ID, dan transaction type (untuk keuangan)
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId AND e.transactionType = :transactionType")
+    Optional<EntriHarian> findByTanggalLaporanAndAccountIdAndTransactionType(
+            @Param("tanggal") LocalDate tanggal, 
+            @Param("accountId") Integer accountId,
+            @Param("transactionType") com.padudjayaputera.sistem_akuntansi.model.TransactionType transactionType);
+    
+    /**
+     * ✅ NEW: Mencari semua entri keuangan untuk account dan tanggal tertentu
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId AND e.transactionType IS NOT NULL ORDER BY e.createdAt DESC")
+    List<EntriHarian> findKeuanganEntriesByTanggalAndAccountId(@Param("tanggal") LocalDate tanggal, @Param("accountId") Integer accountId);
+    
+    /**
+     * ✅ NEW: Get daily summary untuk keuangan (total penerimaan dan pengeluaran)
+     */
+    @Query("SELECT " +
+           "COALESCE(SUM(CASE WHEN e.transactionType = 'PENERIMAAN' THEN e.nilai ELSE 0 END), 0) as totalPenerimaan, " +
+           "COALESCE(SUM(CASE WHEN e.transactionType = 'PENGELUARAN' THEN e.nilai ELSE 0 END), 0) as totalPengeluaran " +
+           "FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId AND e.transactionType IS NOT NULL")
+    Object[] getDailyCashSummary(@Param("tanggal") LocalDate tanggal, @Param("accountId") Integer accountId);
 }
