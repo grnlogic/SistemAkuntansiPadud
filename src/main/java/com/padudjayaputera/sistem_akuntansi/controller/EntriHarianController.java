@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.padudjayaputera.sistem_akuntansi.dto.EntriHarianRequest;
 import com.padudjayaputera.sistem_akuntansi.model.EntriHarian;
 import com.padudjayaputera.sistem_akuntansi.service.EntriHarianService;
@@ -47,8 +45,17 @@ public class EntriHarianController {
         try {
             LocalDate localDate = LocalDate.parse(date);
             List<EntriHarian> entries = entriHarianService.getEntriesByDate(localDate);
+            
+            // ✅ ADDED: Log response for debugging
+            log.info("Returning {} entries for date {}", entries.size(), date);
+            for (EntriHarian entry : entries) {
+                log.info("Entry: id={}, accountId={}, nilai={}, tanggalLaporan={}", 
+                        entry.getId(), entry.getAccount().getId(), entry.getNilai(), entry.getTanggalLaporan());
+            }
+            
             return ResponseEntity.ok(entries);
         } catch (Exception e) {
+            log.error("Error getting entries by date: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -69,16 +76,21 @@ public class EntriHarianController {
 
     @PostMapping("/batch")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> createBatchEntries(@RequestBody List<EntriHarianRequest> requests) {
+    public ResponseEntity<?> createBatchEntries(@RequestBody List<EntriHarianRequest> requests, HttpServletRequest httpRequest) {
         try {
             log.info("=== BATCH ENTRY CREATION START ===");
-            log.info("Raw request body: {}", requests);
+            log.info("Raw request body received");
+            log.info("Content-Type: {}", httpRequest.getContentType());
+            log.info("Request size: {}", requests != null ? requests.size() : "null");
             
+            // ✅ ADDED: Log raw request details
             if (requests != null) {
                 for (int i = 0; i < requests.size(); i++) {
                     EntriHarianRequest req = requests.get(i);
-                    log.info("Request[{}]: accountId={}, tanggal={}, nilai={}, description='{}'", 
-                            i, req.getAccountId(), req.getTanggal(), req.getNilai(), req.getDescription());
+                    log.info("Request[{}]: accountId={}, tanggal={}, nilai={}, description='{}', transactionType={}, targetAmount={}, realisasiAmount={}, hppAmount={}, pemakaianAmount={}, stokAkhir={}", 
+                            i, req.getAccountId(), req.getTanggal(), req.getNilai(), req.getDescription(),
+                            req.getTransactionType(), req.getTargetAmount(), req.getRealisasiAmount(),
+                            req.getHppAmount(), req.getPemakaianAmount(), req.getStokAkhir());
                 }
             }
             
@@ -87,8 +99,32 @@ public class EntriHarianController {
                 return ResponseEntity.badRequest().body("Request tidak boleh kosong");
             }
 
+            // ✅ ADDED: Validate each request before processing
+            for (int i = 0; i < requests.size(); i++) {
+                EntriHarianRequest request = requests.get(i);
+                if (request.getAccountId() == null) {
+                    log.error("Request[{}] has null accountId", i);
+                    return ResponseEntity.badRequest().body("AccountId tidak boleh null pada request ke-" + (i+1));
+                }
+                if (request.getTanggal() == null) {
+                    log.error("Request[{}] has null tanggal", i);
+                    return ResponseEntity.badRequest().body("Tanggal tidak boleh null pada request ke-" + (i+1));
+                }
+                if (request.getNilai() == null) {
+                    log.error("Request[{}] has null nilai", i);
+                    return ResponseEntity.badRequest().body("Nilai tidak boleh null pada request ke-" + (i+1));
+                }
+            }
+
             List<EntriHarian> savedEntries = entriHarianService.saveBatchEntries(requests);
-            log.info("Successfully saved {} entries", savedEntries.size());
+            
+            // ✅ ADDED: Log response for debugging
+            log.info("Successfully saved {} entries, returning response", savedEntries.size());
+            for (EntriHarian entry : savedEntries) {
+                log.info("Saved entry: id={}, accountId={}, nilai={}, tanggalLaporan={}", 
+                        entry.getId(), entry.getAccount().getId(), entry.getNilai(), entry.getTanggalLaporan());
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(savedEntries);
             
         } catch (IllegalArgumentException e) {

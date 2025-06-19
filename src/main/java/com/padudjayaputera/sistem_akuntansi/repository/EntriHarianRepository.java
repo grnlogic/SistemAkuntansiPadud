@@ -2,6 +2,7 @@ package com.padudjayaputera.sistem_akuntansi.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,16 @@ public interface EntriHarianRepository extends JpaRepository<EntriHarian, Intege
      */
     @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.division.id = :divisionId")
     List<EntriHarian> findByTanggalLaporanAndAccountDivisionId(@Param("tanggal") LocalDate tanggal, @Param("divisionId") Integer divisionId);
+    
+    /**
+     * ✅ NEW: Mencari entri berdasarkan tanggal dan account ID untuk handle duplicates.
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId")
+    Optional<EntriHarian> findByTanggalLaporanAndAccountId(@Param("tanggal") LocalDate tanggal, @Param("accountId") Integer accountId);
+    
+    /**
+     * ✅ NEW: Mencari semua entri untuk account tertentu pada tanggal tertentu (jika ada multiple)
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.id = :accountId ORDER BY e.createdAt DESC")
+    List<EntriHarian> findAllByTanggalLaporanAndAccountId(@Param("tanggal") LocalDate tanggal, @Param("accountId") Integer accountId);
 }
