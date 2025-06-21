@@ -364,6 +364,27 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         if (request.getStokAkhir() != null) {
             entry.setStokAkhir(request.getStokAkhir());
         }
+        
+        // ✅ NEW: HRD fields update
+        if (request.getAttendanceStatus() != null) {
+            try {
+                entry.setAttendanceStatus(EntriHarian.AttendanceStatus.valueOf(request.getAttendanceStatus()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid attendance status during update: {}", request.getAttendanceStatus());
+            }
+        }
+        
+        if (request.getAbsentCount() != null) {
+            entry.setAbsentCount(request.getAbsentCount());
+        }
+        
+        if (request.getShift() != null) {
+            try {
+                entry.setShift(EntriHarian.ShiftKerja.valueOf(request.getShift()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid shift during update: {}", request.getShift());
+            }
+        }
     }
 
     private EntriHarian createEntriHarianFromRequest(EntriHarianRequest request, Account account, User user) {
@@ -391,6 +412,30 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         newEntry.setPemakaianAmount(request.getPemakaianAmount());
         newEntry.setStokAkhir(request.getStokAkhir());
         newEntry.setSaldoAkhir(request.getSaldoAkhir());
+        
+        // ✅ NEW: HRD fields mapping
+        if (request.getAttendanceStatus() != null) {
+            try {
+                newEntry.setAttendanceStatus(EntriHarian.AttendanceStatus.valueOf(request.getAttendanceStatus()));
+                log.info("  - attendanceStatus set to: {}", request.getAttendanceStatus());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid attendance status: {}, skipping", request.getAttendanceStatus());
+            }
+        }
+        
+        if (request.getAbsentCount() != null) {
+            newEntry.setAbsentCount(request.getAbsentCount());
+            log.info("  - absentCount set to: {}", request.getAbsentCount());
+        }
+        
+        if (request.getShift() != null) {
+            try {
+                newEntry.setShift(EntriHarian.ShiftKerja.valueOf(request.getShift()));
+                log.info("  - shift set to: {}", request.getShift());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid shift: {}, skipping", request.getShift());
+            }
+        }
         
         // ✅ SPECIAL HANDLING: Jika transaction type adalah SALDO_AKHIR, set saldoAkhir dengan nilai dari nilai field
         handleSaldoAkhirTransaction(newEntry, request);
@@ -424,6 +469,11 @@ public class EntriHarianServiceImpl implements EntriHarianService {
             
             if (divisionName.contains("keuangan") && request.isKeuanganData()) {
                 saveKeuanganSaldo(savedEntry, request);
+            }
+            
+            // ✅ NEW: HRD data saving
+            if (divisionName.contains("hrd") && request.isHRDData()) {
+                saveHRDData(savedEntry, request);
             }
             
         } catch (Exception e) {
@@ -597,6 +647,37 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         }
     }
 
+    // ✅ NEW: Method untuk menyimpan data HRD
+    private void saveHRDData(EntriHarian entry, EntriHarianRequest request) {
+        log.info("Saving HRD data for entry ID: {}", entry.getId());
+        log.info("Attendance: {}, Absent Count: {}, Shift: {}", 
+                request.getAttendanceStatus(), request.getAbsentCount(), request.getShift());
+        
+        try {
+            // For HRD, the main data is already saved in EntriHarian
+            // We just log the HRD-specific information for tracking
+            
+            String attendanceStatus = request.getAttendanceStatus() != null ? request.getAttendanceStatus() : "Unknown";
+            Integer absentCount = request.getAbsentCount() != null ? request.getAbsentCount() : 0;
+            String shift = request.getShift() != null ? request.getShift() : "Unknown";
+            
+            log.info("Successfully processed HRD data - Entry ID: {}, Employee: {}, Status: {}, Absent Count: {}, Shift: {}", 
+                    entry.getId(), 
+                    entry.getUser().getUsername(), 
+                    attendanceStatus,
+                    absentCount,
+                    shift);
+            
+            // If you need a separate HRD table in the future, add it here
+            // For now, the data is stored in the main EntriHarian table with HRD-specific fields
+            
+        } catch (Exception e) {
+            log.error("Failed to save HRD data: {}", e.getMessage(), e);
+            // Don't throw exception, just log warning as HRD data is already in main entry
+            log.warn("Continuing - HRD data is stored in main entry record");
+        }
+    }
+
     // Helper methods
     private String extractSalesPersonFromDescription(String description) {
         if (description != null && description.toLowerCase().contains("sales")) {
@@ -687,6 +768,27 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         existingEntry.setPemakaianAmount(request.getPemakaianAmount());
         existingEntry.setStokAkhir(request.getStokAkhir());
         existingEntry.setSaldoAkhir(request.getSaldoAkhir());
+
+        // ✅ NEW: Update HRD fields
+        if (request.getAttendanceStatus() != null) {
+            try {
+                existingEntry.setAttendanceStatus(EntriHarian.AttendanceStatus.valueOf(request.getAttendanceStatus()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid attendance status during update: {}", request.getAttendanceStatus());
+            }
+        }
+        
+        if (request.getAbsentCount() != null) {
+            existingEntry.setAbsentCount(request.getAbsentCount());
+        }
+        
+        if (request.getShift() != null) {
+            try {
+                existingEntry.setShift(EntriHarian.ShiftKerja.valueOf(request.getShift()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid shift during update: {}", request.getShift());
+            }
+        }
 
         return entriHarianRepository.save(existingEntry);
     }

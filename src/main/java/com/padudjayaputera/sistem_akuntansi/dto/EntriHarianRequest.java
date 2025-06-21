@@ -55,6 +55,16 @@ public class EntriHarianRequest {
     @JsonProperty("saldoAkhir")
     private BigDecimal saldoAkhir;
     
+    // ✅ NEW: Field untuk HRD
+    @JsonProperty("attendanceStatus")
+    private String attendanceStatus;
+    
+    @JsonProperty("absentCount")
+    private Integer absentCount;
+    
+    @JsonProperty("shift")
+    private String shift;
+    
     // ✅ Helper methods untuk validasi divisi-specific
     public boolean isKeuanganData() {
         return transactionType != null || saldoAkhir != null;
@@ -72,6 +82,11 @@ public class EntriHarianRequest {
         return pemakaianAmount != null || stokAkhir != null;
     }
     
+    // ✅ NEW: Helper method untuk HRD
+    public boolean isHRDData() {
+        return attendanceStatus != null || absentCount != null || shift != null;
+    }
+    
     // ✅ Add toString for debugging
     @Override
     public String toString() {
@@ -87,6 +102,9 @@ public class EntriHarianRequest {
                 ", pemakaianAmount=" + pemakaianAmount +
                 ", stokAkhir=" + stokAkhir +
                 ", saldoAkhir=" + saldoAkhir +
+                ", attendanceStatus='" + attendanceStatus + '\'' +
+                ", absentCount=" + absentCount +
+                ", shift='" + shift + '\'' +
                 '}';
     }
 }

@@ -24,6 +24,16 @@ import lombok.Data;
 @Data
 public class EntriHarian {
 
+    // ✅ NEW: Enums for HRD functionality
+    public enum AttendanceStatus {
+        HADIR, TIDAK_HADIR, SAKIT, IZIN
+    }
+
+    public enum ShiftKerja {
+        REGULER, // 7-15
+        LEMBUR   // 15-20
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonProperty("id")
@@ -80,6 +90,21 @@ public class EntriHarian {
     @JsonProperty("saldoAkhir")
     private BigDecimal saldoAkhir;
 
+    // ✅ NEW: HRD Fields
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attendance_status", length = 20)
+    @JsonProperty("attendanceStatus")
+    private AttendanceStatus attendanceStatus;
+
+    @Column(name = "absent_count")
+    @JsonProperty("absentCount")
+    private Integer absentCount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shift", length = 20)
+    @JsonProperty("shift")
+    private ShiftKerja shift;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonProperty("createdAt")
     private LocalDateTime createdAt;
@@ -104,6 +129,11 @@ public class EntriHarian {
     
     public boolean isGudangData() {
         return pemakaianAmount != null || stokAkhir != null;
+    }
+    
+    // ✅ NEW: Helper method untuk HRD
+    public boolean isHRDData() {
+        return attendanceStatus != null || absentCount != null || shift != null;
     }
     
     // ✅ Helper method untuk performance calculation (Pemasaran)
