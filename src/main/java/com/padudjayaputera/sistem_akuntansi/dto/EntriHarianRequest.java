@@ -51,9 +51,13 @@ public class EntriHarianRequest {
     @JsonProperty("stokAkhir")
     private BigDecimal stokAkhir;
     
+    // ✅ NEW: Field untuk Keuangan - Saldo Akhir
+    @JsonProperty("saldoAkhir")
+    private BigDecimal saldoAkhir;
+    
     // ✅ Helper methods untuk validasi divisi-specific
     public boolean isKeuanganData() {
-        return transactionType != null;
+        return transactionType != null || saldoAkhir != null;
     }
     
     public boolean isPemasaranData() {
@@ -82,6 +86,7 @@ public class EntriHarianRequest {
                 ", hppAmount=" + hppAmount +
                 ", pemakaianAmount=" + pemakaianAmount +
                 ", stokAkhir=" + stokAkhir +
+                ", saldoAkhir=" + saldoAkhir +
                 '}';
     }
 }

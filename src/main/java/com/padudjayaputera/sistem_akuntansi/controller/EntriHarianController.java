@@ -1,7 +1,10 @@
 package com.padudjayaputera.sistem_akuntansi.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,17 +45,21 @@ public class EntriHarianController {
     @GetMapping("/date/{date}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<EntriHarian>> getEntriesByDate(@PathVariable String date) {
+        log.info("🔍 METHOD CALLED: getEntriesByDate for date: {}", date);
+        
         try {
             LocalDate localDate = LocalDate.parse(date);
             List<EntriHarian> entries = entriHarianService.getEntriesByDate(localDate);
             
             // ✅ ADDED: Log response for debugging
             log.info("Returning {} entries for date {}", entries.size(), date);
-            for (EntriHarian entry : entries) {
-                log.info("Entry: id={}, accountId={}, nilai={}, tanggalLaporan={}", 
-                        entry.getId(), entry.getAccount().getId(), entry.getNilai(), entry.getTanggalLaporan());
-            }
             
+            // ✅ DEBUG: Log response mapping
+            for (EntriHarian entry : entries) {
+    log.info("🔍 RESPONSE MAP: id={}, transactionType={}, saldoAkhir={}", 
+        entry.getId(), entry.getTransactionType(), entry.getSaldoAkhir());
+}
+
             return ResponseEntity.ok(entries);
         } catch (Exception e) {
             log.error("Error getting entries by date: {}", e.getMessage(), e);
@@ -79,68 +86,91 @@ public class EntriHarianController {
     public ResponseEntity<?> createBatchEntries(@RequestBody List<EntriHarianRequest> requests, HttpServletRequest httpRequest) {
         try {
             log.info("=== BATCH ENTRY CREATION START ===");
-            log.info("Raw request body received");
             log.info("Content-Type: {}", httpRequest.getContentType());
             log.info("Request size: {}", requests != null ? requests.size() : "null");
             
-            // ✅ ADDED: Log raw request details
-            if (requests != null) {
-                for (int i = 0; i < requests.size(); i++) {
-                    EntriHarianRequest req = requests.get(i);
-                    log.info("Request[{}]: accountId={}, tanggal={}, nilai={}, description='{}', transactionType={}, targetAmount={}, realisasiAmount={}, hppAmount={}, pemakaianAmount={}, stokAkhir={}", 
-                            i, req.getAccountId(), req.getTanggal(), req.getNilai(), req.getDescription(),
-                            req.getTransactionType(), req.getTargetAmount(), req.getRealisasiAmount(),
-                            req.getHppAmount(), req.getPemakaianAmount(), req.getStokAkhir());
-                }
-            }
-            
             if (requests == null || requests.isEmpty()) {
                 log.error("Request is null or empty");
-                return ResponseEntity.badRequest().body("Request tidak boleh kosong");
+                return ResponseEntity.badRequest().body(createErrorResponse("Request tidak boleh kosong", null));
             }
 
-            // ✅ ADDED: Validate each request before processing
+            // ✅ ENHANCED: Better validation with detailed logging
+            List<String> validationErrors = new ArrayList<>();
             for (int i = 0; i < requests.size(); i++) {
                 EntriHarianRequest request = requests.get(i);
+                log.info("Request[{}]: accountId={}, tanggal={}, nilai={}, targetAmount={}, realisasiAmount={}", 
+                        i, request.getAccountId(), request.getTanggal(), request.getNilai(),
+                        request.getTargetAmount(), request.getRealisasiAmount());
+                
                 if (request.getAccountId() == null) {
-                    log.error("Request[{}] has null accountId", i);
-                    return ResponseEntity.badRequest().body("AccountId tidak boleh null pada request ke-" + (i+1));
+                    validationErrors.add("Request ke-" + (i+1) + ": AccountId tidak boleh null");
                 }
                 if (request.getTanggal() == null) {
-                    log.error("Request[{}] has null tanggal", i);
-                    return ResponseEntity.badRequest().body("Tanggal tidak boleh null pada request ke-" + (i+1));
+                    validationErrors.add("Request ke-" + (i+1) + ": Tanggal tidak boleh null");
                 }
                 if (request.getNilai() == null) {
-                    log.error("Request[{}] has null nilai", i);
-                    return ResponseEntity.badRequest().body("Nilai tidak boleh null pada request ke-" + (i+1));
+                    validationErrors.add("Request ke-" + (i+1) + ": Nilai tidak boleh null");
                 }
+            }
+
+            if (!validationErrors.isEmpty()) {
+                log.warn("⚠️ Validation errors found: {}", validationErrors);
+                return ResponseEntity.badRequest().body(createErrorResponse("Validation errors", validationErrors));
             }
 
             List<EntriHarian> savedEntries = entriHarianService.saveBatchEntries(requests);
             
-            // ✅ ADDED: Log response for debugging
-            log.info("Successfully saved {} entries, returning response", savedEntries.size());
-            for (EntriHarian entry : savedEntries) {
-                log.info("Saved entry: id={}, accountId={}, nilai={}, tanggalLaporan={}", 
-                        entry.getId(), entry.getAccount().getId(), entry.getNilai(), entry.getTanggalLaporan());
+            // ✅ ENHANCED: Create detailed response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", savedEntries);
+            response.put("totalRequested", requests.size());
+            response.put("totalSaved", savedEntries.size());
+            
+            if (savedEntries.size() < requests.size()) {
+                response.put("message", "Sebagian entri berhasil disimpan. Beberapa mungkin duplikat atau ada masalah validasi.");
+                response.put("warnings", List.of("Cek log server untuk detail duplikat atau masalah lainnya"));
+            } else {
+                response.put("message", "Semua entri berhasil disimpan");
             }
             
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedEntries);
+            log.info("✅ Successfully processed {}/{} entries", savedEntries.size(), requests.size());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (IllegalArgumentException e) {
-            log.error("Validation error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Validation error: " + e.getMessage());
+            log.warn("⚠️ Validation error: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Validation error: " + e.getMessage(), null));
+            
         } catch (AccessDeniedException e) {
-            log.error("Access denied: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (RuntimeException e) {
-            log.error("Runtime error in batch creation: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            log.warn("⚠️ Access denied: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createErrorResponse(e.getMessage(), null));
+            
         } catch (Exception e) {
-            log.error("Unexpected error in batch creation: {}", e.getMessage(), e);
+            log.error("❌ Unexpected error in batch creation: {}", e.getMessage(), e);
+            
+            // ✅ ENHANCED: Don't expose internal errors, but log them properly
+            String userMessage = "Terjadi masalah pada server. Tim teknis telah diberitahu.";
+            
+            if (e.getMessage().contains("constraint") || e.getMessage().contains("duplicate")) {
+                userMessage = "Beberapa data sudah ada. Sistem akan mencoba menangani duplikat secara otomatis.";
+            }
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Terjadi kesalahan pada server: " + e.getMessage());
+                .body(createErrorResponse(userMessage, List.of("Error ID: " + System.currentTimeMillis())));
         }
+    }
+
+    // ✅ HELPER: Create consistent error response
+    private Map<String, Object> createErrorResponse(String message, List<String> details) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", message);
+        if (details != null && !details.isEmpty()) {
+            response.put("details", details);
+        }
+        response.put("timestamp", java.time.LocalDateTime.now());
+        return response;
     }
 
     @PostMapping

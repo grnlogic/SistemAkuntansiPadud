@@ -55,21 +55,30 @@ public class EntriHarian {
     @Column(name = "transaction_type")
     private TransactionType transactionType;
 
-    // ✅ TAMBAHAN BARU: Kolom untuk data khusus divisi
+    // ✅ FIXED: Add proper JSON annotations for specialized fields
     @Column(name = "target_amount", precision = 15, scale = 2)
+    @JsonProperty("targetAmount")
     private BigDecimal targetAmount;
 
     @Column(name = "realisasi_amount", precision = 15, scale = 2)
+    @JsonProperty("realisasiAmount")
     private BigDecimal realisasiAmount;
 
     @Column(name = "hpp_amount", precision = 15, scale = 2)
+    @JsonProperty("hppAmount")
     private BigDecimal hppAmount;
 
     @Column(name = "pemakaian_amount", precision = 15, scale = 2)
+    @JsonProperty("pemakaianAmount")
     private BigDecimal pemakaianAmount;
 
     @Column(name = "stok_akhir", precision = 15, scale = 2)
+    @JsonProperty("stokAkhir")
     private BigDecimal stokAkhir;
+
+    @Column(name = "saldo_akhir", precision = 15, scale = 2)
+    @JsonProperty("saldoAkhir")
+    private BigDecimal saldoAkhir;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonProperty("createdAt")
@@ -82,7 +91,7 @@ public class EntriHarian {
 
     // ✅ Helper methods untuk menentukan jenis divisi data
     public boolean isKeuanganData() {
-        return transactionType != null;
+        return transactionType != null || saldoAkhir != null;
     }
     
     public boolean isPemasaranData() {
