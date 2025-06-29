@@ -27,6 +27,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Controller untuk ENTRI HARIAN UMUM (jurnal harian, kas, pemasaran, produksi, gudang, HRD, dll).
+ * Endpoint ini TIDAK untuk transaksi utang/piutang.
+ * Semua request harus berupa data entri harian umum yang valid.
+ *
+ * Endpoint:
+ * - POST /api/v1/entri-harian : tambah entri harian
+ * - POST /api/v1/entri-harian/batch : tambah batch entri harian
+ * - GET /api/v1/entri-harian : list entri harian
+ * - GET /api/v1/entri-harian/date/{date} : list entri harian per tanggal
+ * - GET /api/v1/entri-harian/division/{divisionId} : list entri harian per divisi
+ * - PUT /api/v1/entri-harian/{id} : update entri harian
+ * - DELETE /api/v1/entri-harian/{id} : hapus entri harian
+ */
 @RestController
 @RequestMapping("/api/v1/entri-harian")
 @RequiredArgsConstructor
@@ -81,9 +95,19 @@ public class EntriHarianController {
         return ResponseEntity.ok(entry);
     }
 
+    /**
+     * Tambah batch entri harian.
+     * Tidak boleh mengandung data utang/piutang.
+     */
     @PostMapping("/batch")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> createBatchEntries(@RequestBody List<EntriHarianRequest> requests, HttpServletRequest httpRequest) {
+        // Validasi: tolak jika ada field khusus utang/piutang
+        for (EntriHarianRequest req : requests) {
+            if (req.getClass().getSimpleName().toLowerCase().contains("utang") || req.getClass().getSimpleName().toLowerCase().contains("piutang")) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Request batch tidak boleh mengandung data utang/piutang", null));
+            }
+        }
         try {
             log.info("=== BATCH ENTRY CREATION START ===");
             log.info("Content-Type: {}", httpRequest.getContentType());
@@ -173,9 +197,17 @@ public class EntriHarianController {
         return response;
     }
 
+    /**
+     * Tambah entri harian.
+     * Tidak boleh mengandung data utang/piutang.
+     */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntriHarian> createEntry(@RequestBody EntriHarianRequest request) {
+        // Validasi: tolak jika ada field khusus utang/piutang
+        if (request.getClass().getSimpleName().toLowerCase().contains("utang") || request.getClass().getSimpleName().toLowerCase().contains("piutang")) {
+            return ResponseEntity.badRequest().build();
+        }
         EntriHarian savedEntry = entriHarianService.saveEntry(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedEntry);
     }
