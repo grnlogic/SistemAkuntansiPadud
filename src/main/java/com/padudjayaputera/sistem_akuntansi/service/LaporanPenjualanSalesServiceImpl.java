@@ -58,7 +58,12 @@ public class LaporanPenjualanSalesServiceImpl implements LaporanPenjualanSalesSe
 
     @Override
     public List<LaporanPenjualanSales> getAllReports() {
-        return laporanRepository.findAll();
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (loggedInUser.getRole().name().equals("SUPER_ADMIN")) {
+            return laporanRepository.findAll();
+        } else {
+            return laporanRepository.findByUserId(loggedInUser.getId());
+        }
     }
 
     @Override

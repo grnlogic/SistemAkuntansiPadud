@@ -41,7 +41,12 @@ public class UtangServiceImpl implements UtangService {
 
     @Override
     public List<UtangTransaksi> getAllUtang() {
-        return utangRepository.findAll();
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (loggedInUser.getRole().name().equals("SUPER_ADMIN")) {
+            return utangRepository.findAll();
+        } else {
+            return utangRepository.findByUserId(loggedInUser.getId());
+        }
     }
 
     @Override

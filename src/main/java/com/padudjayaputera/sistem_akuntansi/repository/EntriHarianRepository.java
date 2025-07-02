@@ -26,10 +26,28 @@ public interface EntriHarianRepository extends JpaRepository<EntriHarian, Intege
     List<EntriHarian> findByAccountDivisionId(@Param("divisionId") Integer divisionId);
     
     /**
+     * ✅ NEW: Mencari entri harian berdasarkan user ID (untuk isolasi data per user)
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.user.id = :userId")
+    List<EntriHarian> findByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * ✅ NEW: Mencari entri harian berdasarkan divisi dan user ID
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.account.division.id = :divisionId AND e.user.id = :userId")
+    List<EntriHarian> findByAccountDivisionIdAndUserId(@Param("divisionId") Integer divisionId, @Param("userId") Integer userId);
+    
+    /**
      * Mencari entri harian berdasarkan tanggal dan divisi.
      */
     @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.division.id = :divisionId")
     List<EntriHarian> findByTanggalLaporanAndAccountDivisionId(@Param("tanggal") LocalDate tanggal, @Param("divisionId") Integer divisionId);
+    
+    /**
+     * ✅ NEW: Mencari entri harian berdasarkan tanggal, divisi, dan user ID
+     */
+    @Query("SELECT e FROM EntriHarian e WHERE e.tanggalLaporan = :tanggal AND e.account.division.id = :divisionId AND e.user.id = :userId")
+    List<EntriHarian> findByTanggalLaporanAndAccountDivisionIdAndUserId(@Param("tanggal") LocalDate tanggal, @Param("divisionId") Integer divisionId, @Param("userId") Integer userId);
     
     /**
      * ✅ NEW: Mencari entri berdasarkan tanggal dan account ID untuk handle duplicates.

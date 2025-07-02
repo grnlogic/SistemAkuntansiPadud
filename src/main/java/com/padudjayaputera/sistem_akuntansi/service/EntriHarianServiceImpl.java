@@ -55,9 +55,13 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         
         List<EntriHarian> entries;
         if (loggedInUser.getRole() == UserRole.SUPER_ADMIN) {
+            // SUPER_ADMIN dapat melihat semua data dari semua user
             entries = entriHarianRepository.findAll();
+            log.info("SUPER_ADMIN {} viewing all {} entries from all users", loggedInUser.getUsername(), entries.size());
         } else {
-            entries = entriHarianRepository.findByAccountDivisionId(loggedInUser.getDivision().getId());
+            // ADMIN_DIVISI hanya dapat melihat data yang mereka buat sendiri
+            entries = entriHarianRepository.findByAccountDivisionIdAndUserId(loggedInUser.getDivision().getId(), loggedInUser.getId());
+            log.info("ADMIN_DIVISI {} viewing {} entries from their own division and user", loggedInUser.getUsername(), entries.size());
         }
         
         // ✅ ENHANCED DEBUG: Log entries being returned with specialized data
@@ -80,20 +84,23 @@ public class EntriHarianServiceImpl implements EntriHarianService {
             return entriHarianRepository.findByTanggalLaporan(date);
         }
         
-        return entriHarianRepository.findByTanggalLaporanAndAccountDivisionId(date, loggedInUser.getDivision().getId());
+        return entriHarianRepository.findByTanggalLaporanAndAccountDivisionIdAndUserId(date, loggedInUser.getDivision().getId(), loggedInUser.getId());
     }
 
     @Override
     public List<EntriHarian> getEntriesByDivision(Integer divisionId) {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
+        if (loggedInUser.getRole() == UserRole.SUPER_ADMIN) {
+            // SUPER_ADMIN dapat melihat semua data dari divisi tertentu
+            return entriHarianRepository.findByAccountDivisionId(divisionId);
+        } else {
+            // ADMIN_DIVISI hanya dapat melihat data mereka sendiri dalam divisi mereka
             if (!divisionId.equals(loggedInUser.getDivision().getId())) {
                 throw new AccessDeniedException("Anda tidak diizinkan mengakses data divisi lain.");
             }
+            return entriHarianRepository.findByAccountDivisionIdAndUserId(divisionId, loggedInUser.getId());
         }
-        
-        return entriHarianRepository.findByAccountDivisionId(divisionId);
     }
 
     @Override
@@ -103,9 +110,16 @@ public class EntriHarianServiceImpl implements EntriHarianService {
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
+        if (loggedInUser.getRole() == UserRole.SUPER_ADMIN) {
+            // SUPER_ADMIN dapat mengakses semua entri
+            return entry;
+        } else {
+            // ADMIN_DIVISI hanya dapat mengakses entri yang mereka buat sendiri
             if (!entry.getAccount().getDivision().getId().equals(loggedInUser.getDivision().getId())) {
                 throw new AccessDeniedException("Anda tidak diizinkan mengakses entri di luar divisi Anda.");
+            }
+            if (!entry.getUser().getId().equals(loggedInUser.getId())) {
+                throw new AccessDeniedException("Anda tidak diizinkan mengakses entri yang dibuat oleh user lain.");
             }
         }
         
@@ -753,9 +767,15 @@ public class EntriHarianServiceImpl implements EntriHarianService {
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
+        if (loggedInUser.getRole() == UserRole.SUPER_ADMIN) {
+            // SUPER_ADMIN dapat mengubah semua entri
+        } else {
+            // ADMIN_DIVISI hanya dapat mengubah entri yang mereka buat sendiri
             if (!existingEntry.getAccount().getDivision().getId().equals(loggedInUser.getDivision().getId())) {
                 throw new AccessDeniedException("Anda tidak diizinkan mengubah entri harian di luar divisi Anda.");
+            }
+            if (!existingEntry.getUser().getId().equals(loggedInUser.getId())) {
+                throw new AccessDeniedException("Anda tidak diizinkan mengubah entri yang dibuat oleh user lain.");
             }
         }
 
@@ -800,9 +820,15 @@ public class EntriHarianServiceImpl implements EntriHarianService {
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if (loggedInUser.getRole() == UserRole.ADMIN_DIVISI) {
+        if (loggedInUser.getRole() == UserRole.SUPER_ADMIN) {
+            // SUPER_ADMIN dapat menghapus semua entri
+        } else {
+            // ADMIN_DIVISI hanya dapat menghapus entri yang mereka buat sendiri
             if (!existingEntry.getAccount().getDivision().getId().equals(loggedInUser.getDivision().getId())) {
                 throw new AccessDeniedException("Anda tidak diizinkan menghapus entri harian di luar divisi Anda.");
+            }
+            if (!existingEntry.getUser().getId().equals(loggedInUser.getId())) {
+                throw new AccessDeniedException("Anda tidak diizinkan menghapus entri yang dibuat oleh user lain.");
             }
         }
 

@@ -49,7 +49,12 @@ public class PiutangServiceImpl implements PiutangService {
 
     @Override
     public List<PiutangTransaksi> getAllPiutang() {
-        return piutangRepository.findAll();
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (loggedInUser.getRole().name().equals("SUPER_ADMIN")) {
+            return piutangRepository.findAll();
+        } else {
+            return piutangRepository.findByUserId(loggedInUser.getId());
+        }
     }
 
 
