@@ -11,35 +11,37 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
-public class LaporanPenjualanSalesRequest {
+public class LaporanPenjualanProdukRequest {
 
     @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd")
     private final LocalDate tanggalLaporan;
 
     @NotNull
-    private Integer salespersonId;
+    private final Integer salespersonId;
 
-    private final BigDecimal targetPenjualan;
-    private final BigDecimal realisasiPenjualan;
-    private final BigDecimal returPenjualan;
+    @NotNull
+    private final Integer productAccountId;
+
+    private final BigDecimal targetKuantitas;
+
+    private final BigDecimal realisasiKuantitas;
+
     private final String keteranganKendala;
 
-    // Constructor ini memberitahu Jackson cara membuat objek dari JSON secara eksplisit
     @JsonCreator
-    public LaporanPenjualanSalesRequest(
+    public LaporanPenjualanProdukRequest(
             @JsonProperty("tanggalLaporan") LocalDate tanggalLaporan,
             @JsonProperty("salespersonId") Integer salespersonId,
-            @JsonProperty("targetPenjualan") BigDecimal targetPenjualan,
-            @JsonProperty("realisasiPenjualan") BigDecimal realisasiPenjualan,
-            @JsonProperty("returPenjualan") BigDecimal returPenjualan,
+            @JsonProperty("productAccountId") Integer productAccountId,
+            @JsonProperty("targetKuantitas") BigDecimal targetKuantitas,
+            @JsonProperty("realisasiKuantitas") BigDecimal realisasiKuantitas,
             @JsonProperty("keteranganKendala") String keteranganKendala) {
-        
         this.tanggalLaporan = tanggalLaporan;
         this.salespersonId = salespersonId;
-        this.targetPenjualan = targetPenjualan;
-        this.realisasiPenjualan = realisasiPenjualan;
-        this.returPenjualan = returPenjualan;
+        this.productAccountId = productAccountId;
+        this.targetKuantitas = targetKuantitas;
+        this.realisasiKuantitas = realisasiKuantitas;
         this.keteranganKendala = keteranganKendala;
     }
 }

@@ -251,63 +251,93 @@ public class EntriHarianServiceImpl implements EntriHarianService {
                     isNewEntry = true;
                     
                 } else if (isPemasaranDivision && request.isPemasaranData()) {
-                    // For pemasaran, check for similar data on same date
-                    List<EntriHarian> existingPemasaranEntries = entriHarianRepository
-                            .findAllByTanggalLaporanAndAccountId(request.getTanggal(), request.getAccountId());
-                    
-                    // Check for very similar pemasaran data
-                    boolean similarData = existingPemasaranEntries.stream().anyMatch(existing -> 
-                        Objects.equals(existing.getTargetAmount(), request.getTargetAmount()) &&
-                        Objects.equals(existing.getRealisasiAmount(), request.getRealisasiAmount()) &&
-                        Objects.equals(existing.getDescription(), request.getDescription())
-                    );
-                    
-                    if (similarData) {
-                        log.info("🔄 PEMASARAN DUPLICATE DETECTED: Similar sales data found for account {} on date {}", 
-                                request.getAccountId(), request.getTanggal());
-                        duplicateWarnings.add(String.format("Data penjualan serupa sudah ada untuk akun %s pada %s", 
-                                account.getAccountCode(), request.getTanggal()));
-                        isDuplicate = true;
-                    }
-                    
-                    // Always create new entry for pemasaran (multiple sales records allowed)
-                    entryToSave = createEntriHarianFromRequest(request, account, loggedInUser);
-                    isNewEntry = true;
-                    
-                } else {
-                    // For other divisions, check for existing entries and update if found
-                    Optional<EntriHarian> existingEntry = entriHarianRepository
+                    // For pemasaran, check for existing entries and update if found (upsert behavior)
+                    Optional<EntriHarian> existingPemasaranEntry = entriHarianRepository
                             .findByTanggalLaporanAndAccountId(request.getTanggal(), request.getAccountId());
 
-                    if (existingEntry.isPresent()) {
-                        log.info("🔄 UPDATING EXISTING: Found existing entry for account {} on date {}", 
+                    if (existingPemasaranEntry.isPresent()) {
+                        log.info("🔄 UPDATING EXISTING PEMASARAN: Found existing entry for account {} on date {}", 
                                 request.getAccountId(), request.getTanggal());
                         
-                        entryToSave = existingEntry.get();
+                        entryToSave = existingPemasaranEntry.get();
                         
                         // Check if the update is significantly different
                         boolean significantChange = 
-                            !entryToSave.getNilai().equals(request.getNilai()) ||
+                            !Objects.equals(entryToSave.getTargetAmount(), request.getTargetAmount()) ||
+                            !Objects.equals(entryToSave.getRealisasiAmount(), request.getRealisasiAmount()) ||
+                            !Objects.equals(entryToSave.getSalesUserId(), request.getSalesUserId()) ||
                             !Objects.equals(entryToSave.getDescription(), request.getDescription());
                         
                         if (!significantChange) {
-                            log.info("📝 MINOR UPDATE: Data hampir sama untuk account {} pada {}", 
+                            log.info("📝 MINOR PEMASARAN UPDATE: Data hampir sama untuk account {} pada {}", 
                                     account.getAccountCode(), request.getTanggal());
-                            duplicateWarnings.add(String.format("Data hampir sama untuk akun %s pada %s - tetap diupdate", 
+                            duplicateWarnings.add(String.format("Data penjualan hampir sama untuk akun %s pada %s - tetap diupdate", 
                                     account.getAccountCode(), request.getTanggal()));
                             isDuplicate = true;
                         }
                         
+                        // Update pemasaran-specific fields
                         entryToSave.setNilai(request.getNilai());
                         entryToSave.setDescription(request.getDescription());
                         updateSpecializedFields(entryToSave, request);
                         
                     } else {
-                        log.info("✨ CREATING NEW: Creating new entry for account {} on date {}", 
+                        log.info("✨ CREATING NEW PEMASARAN: Creating new entry for account {} on date {}", 
                                 request.getAccountId(), request.getTanggal());
                         
                         entryToSave = createEntriHarianFromRequest(request, account, loggedInUser);
                         isNewEntry = true;
+                    }
+                    
+                } else {
+                    // For other divisions, check for existing entries and update if found
+                    // ✅ FIXED: HRD division should ALWAYS create new entries, never update
+                    String divisionName = account.getDivision().getName().toLowerCase();
+                    boolean isHRDDivision = divisionName.contains("hrd") || divisionName.contains("sumber daya manusia");
+                    
+                    if (isHRDDivision) {
+                        // ✅ HRD: ALWAYS CREATE NEW - Never check for existing entries
+                        log.info("✨ CREATING NEW HRD: HRD division detected, always creating new entry for account {} on date {}", 
+                                request.getAccountId(), request.getTanggal());
+                        
+                        entryToSave = createEntriHarianFromRequest(request, account, loggedInUser);
+                        isNewEntry = true;
+                        
+                    } else {
+                        // For non-HRD divisions, check for existing entries and update if found
+                        Optional<EntriHarian> existingEntry = entriHarianRepository
+                                .findByTanggalLaporanAndAccountId(request.getTanggal(), request.getAccountId());
+
+                        if (existingEntry.isPresent()) {
+                            log.info("🔄 UPDATING EXISTING: Found existing entry for account {} on date {}", 
+                                    request.getAccountId(), request.getTanggal());
+                            
+                            entryToSave = existingEntry.get();
+                            
+                            // Check if the update is significantly different
+                            boolean significantChange = 
+                                !entryToSave.getNilai().equals(request.getNilai()) ||
+                                !Objects.equals(entryToSave.getDescription(), request.getDescription());
+                            
+                            if (!significantChange) {
+                                log.info("📝 MINOR UPDATE: Data hampir sama untuk account {} pada {}", 
+                                        account.getAccountCode(), request.getTanggal());
+                                duplicateWarnings.add(String.format("Data hampir sama untuk akun %s pada %s - tetap diupdate", 
+                                        account.getAccountCode(), request.getTanggal()));
+                                isDuplicate = true;
+                            }
+                            
+                            entryToSave.setNilai(request.getNilai());
+                            entryToSave.setDescription(request.getDescription());
+                            updateSpecializedFields(entryToSave, request);
+                            
+                        } else {
+                            log.info("✨ CREATING NEW: Creating new entry for account {} on date {}", 
+                                    request.getAccountId(), request.getTanggal());
+                            
+                            entryToSave = createEntriHarianFromRequest(request, account, loggedInUser);
+                            isNewEntry = true;
+                        }
                     }
                 }
 
@@ -399,6 +429,19 @@ public class EntriHarianServiceImpl implements EntriHarianService {
                 log.warn("Invalid shift during update: {}", request.getShift());
             }
         }
+        
+        // ✅ NEW: Pemasaran-specific fields update
+        if (request.getSalesUserId() != null) {
+            entry.setSalesUserId(request.getSalesUserId());
+        }
+        
+        if (request.getReturPenjualan() != null) {
+            entry.setReturPenjualan(request.getReturPenjualan());
+        }
+        
+        if (request.getKeteranganKendala() != null) {
+            entry.setKeteranganKendala(request.getKeteranganKendala());
+        }
     }
 
     private EntriHarian createEntriHarianFromRequest(EntriHarianRequest request, Account account, User user) {
@@ -418,6 +461,9 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         log.info("  - pemakaianAmount: {}", request.getPemakaianAmount());
         log.info("  - stokAkhir: {}", request.getStokAkhir());
         log.info("  - saldoAkhir: {}", request.getSaldoAkhir());
+        log.info("  - salesUserId: {}", request.getSalesUserId());
+        log.info("  - returPenjualan: {}", request.getReturPenjualan());
+        log.info("  - keteranganKendala: {}", request.getKeteranganKendala());
         
         newEntry.setTransactionType(request.getTransactionType());
         newEntry.setTargetAmount(request.getTargetAmount());
@@ -426,6 +472,11 @@ public class EntriHarianServiceImpl implements EntriHarianService {
         newEntry.setPemakaianAmount(request.getPemakaianAmount());
         newEntry.setStokAkhir(request.getStokAkhir());
         newEntry.setSaldoAkhir(request.getSaldoAkhir());
+        
+        // ✅ NEW: Pemasaran-specific fields mapping
+        newEntry.setSalesUserId(request.getSalesUserId());
+        newEntry.setReturPenjualan(request.getReturPenjualan());
+        newEntry.setKeteranganKendala(request.getKeteranganKendala());
         
         // ✅ NEW: HRD fields mapping
         if (request.getAttendanceStatus() != null) {
@@ -603,16 +654,21 @@ public class EntriHarianServiceImpl implements EntriHarianService {
             
             if (request.getTransactionType() != null) {
                 switch (request.getTransactionType()) {
-                    case PENERIMAAN -> {
+                    case PENERIMAAN:
                         saldo.setPenerimaan(entry.getNilai());
                         saldo.setPengeluaran(BigDecimal.ZERO);
                         log.info("Setting PENERIMAAN: {}", entry.getNilai());
-                    }
-                    case PENGELUARAN -> {
+                        break;
+                    case PENGELUARAN:
                         saldo.setPenerimaan(BigDecimal.ZERO);
                         saldo.setPengeluaran(entry.getNilai());
                         log.info("Setting PENGELUARAN: {}", entry.getNilai());
-                    }
+                        break;
+                    default:
+                        saldo.setPenerimaan(BigDecimal.ZERO);
+                        saldo.setPengeluaran(BigDecimal.ZERO);
+                        log.warn("Unknown transaction type: {}", request.getTransactionType());
+                        break;
                 }
             } else {
                 saldo.setPenerimaan(BigDecimal.ZERO);
@@ -919,13 +975,15 @@ public class EntriHarianServiceImpl implements EntriHarianService {
     // ✅ NEW: Helper method untuk handle SALDO_AKHIR transaction type
     private void handleSaldoAkhirTransaction(EntriHarian entry, EntriHarianRequest request) {
         if (request.getTransactionType() == com.padudjayaputera.sistem_akuntansi.model.TransactionType.SALDO_AKHIR) {
-            // Untuk SALDO_AKHIR, simpan nilai ke field saldoAkhir
-            BigDecimal saldoAkhirValue = request.getSaldoAkhir() != null ? 
-                request.getSaldoAkhir() : request.getNilai();
-            entry.setSaldoAkhir(saldoAkhirValue);
-            entry.setNilai(BigDecimal.ZERO); // Set nilai transaksi ke 0
-            
-            log.info("SALDO_AKHIR transaction: saldoAkhir = {}, nilai = 0", saldoAkhirValue);
+            // Untuk SALDO_AKHIR, hanya simpan saldoAkhir jika diisi user
+            if (request.getSaldoAkhir() != null) {
+                entry.setSaldoAkhir(request.getSaldoAkhir());
+                entry.setNilai(BigDecimal.ZERO); // Set nilai transaksi ke 0
+                log.info("SALDO_AKHIR transaction: saldoAkhir = {}, nilai = 0", request.getSaldoAkhir());
+            } else {
+                entry.setSaldoAkhir(null);
+                log.info("SALDO_AKHIR transaction: saldoAkhir dibiarkan null sesuai input user (tidak dihitung otomatis)");
+            }
         }
     }
 

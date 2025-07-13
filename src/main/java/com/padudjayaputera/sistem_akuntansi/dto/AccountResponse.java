@@ -42,6 +42,18 @@ public class AccountResponse {
         private String name;
     }
     
+    // Constructor yang menerima Account entity
+    public AccountResponse(Account account) {
+        this.id = account.getId();
+        this.accountCode = account.getAccountCode();
+        this.accountName = account.getAccountName();
+        this.valueType = account.getValueType();
+        this.division = DivisionDto.builder()
+            .id(account.getDivision().getId())
+            .name(account.getDivision().getName())
+            .build();
+    }
+    
     // Static method untuk convert dari Account entity
     public static AccountResponse fromAccount(Account account) {
         DivisionDto divisionDto = DivisionDto.builder()

@@ -28,7 +28,9 @@ public class LaporanProduksiController {
     private final LaporanProduksiService laporanService;
 
     private static final String HAS_ACCESS_TO_PRODUKSI =
-        "hasAuthority('SUPER_ADMIN') or (hasAuthority('ADMIN_DIVISI') and authentication.principal.division.name == 'DIVISI PRODUKSI')";
+        "hasAuthority('SUPER_ADMIN') or (hasAuthority('ADMIN_DIVISI') and " +
+        "(authentication.principal.division.name == 'DIVISI PRODUKSI' or " +
+        "authentication.principal.division.name == 'DIVISI BLENDING PERSEDIAAN BAHAN BAKU'))";
 
     @PostMapping
     @PreAuthorize(HAS_ACCESS_TO_PRODUKSI)

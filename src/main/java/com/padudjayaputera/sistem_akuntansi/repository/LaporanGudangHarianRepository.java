@@ -21,4 +21,22 @@ public interface LaporanGudangHarianRepository extends JpaRepository<LaporanGuda
      */
     @Query("SELECT l FROM LaporanGudangHarian l WHERE l.createdBy.id = :userId")
     List<LaporanGudangHarian> findByUserId(@Param("userId") Integer userId);
+
+    /**
+     * Cari stok akhir dari hari sebelumnya untuk digunakan sebagai stok awal default
+     */
+    @Query("SELECT l FROM LaporanGudangHarian l WHERE l.account.id = :accountId AND l.tanggalLaporan < :tanggal ORDER BY l.tanggalLaporan DESC LIMIT 1")
+    Optional<LaporanGudangHarian> findLatestStokAkhirByAccountAndDate(
+        @Param("accountId") Integer accountId, 
+        @Param("tanggal") LocalDate tanggal
+    );
+
+    /**
+     * Cari laporan gudang berdasarkan account dan tanggal untuk validasi duplikasi
+     */
+    @Query("SELECT l FROM LaporanGudangHarian l WHERE l.account.id = :accountId AND l.tanggalLaporan = :tanggal")
+    Optional<LaporanGudangHarian> findByAccountIdAndTanggal(
+        @Param("accountId") Integer accountId, 
+        @Param("tanggal") LocalDate tanggal
+    );
 }

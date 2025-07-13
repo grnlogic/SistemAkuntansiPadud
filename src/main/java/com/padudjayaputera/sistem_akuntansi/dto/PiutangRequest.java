@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.padudjayaputera.sistem_akuntansi.model.KategoriPiutang;
 import com.padudjayaputera.sistem_akuntansi.model.TipePiutang;
 
 import jakarta.validation.constraints.NotNull;
@@ -26,11 +25,6 @@ public class PiutangRequest {
     @NotNull(message = "Tipe transaksi tidak boleh kosong")
     private final TipePiutang tipeTransaksi;
 
-    @NotNull(message = "Kategori piutang tidak boleh kosong")
-    private final KategoriPiutang kategori;
-
-    
-
     @NotNull(message = "Nominal tidak boleh kosong")
     @Positive(message = "Nominal harus lebih dari nol")
     private final BigDecimal nominal;
@@ -45,13 +39,11 @@ public class PiutangRequest {
         @JsonProperty("accountId") Integer accountId,
             @JsonProperty("tanggalTransaksi") LocalDate tanggalTransaksi,
             @JsonProperty("tipeTransaksi") TipePiutang tipeTransaksi,
-            @JsonProperty("kategori") KategoriPiutang kategori,
             @JsonProperty("nominal") BigDecimal nominal,
             @JsonProperty("keterangan") String keterangan) {
                 this.accountId = accountId;
         this.tanggalTransaksi = tanggalTransaksi;
         this.tipeTransaksi = tipeTransaksi;
-        this.kategori = kategori;
         this.nominal = nominal;
         this.keterangan = keterangan;
     }

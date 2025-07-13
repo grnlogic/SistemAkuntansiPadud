@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.padudjayaputera.sistem_akuntansi.dto.UtangRequest;
 import com.padudjayaputera.sistem_akuntansi.model.Account;
+import com.padudjayaputera.sistem_akuntansi.model.KategoriUtang;
 import com.padudjayaputera.sistem_akuntansi.model.User;
 import com.padudjayaputera.sistem_akuntansi.model.UtangTransaksi;
 import com.padudjayaputera.sistem_akuntansi.repository.AccountRepository;
@@ -31,7 +32,7 @@ public class UtangServiceImpl implements UtangService {
         newUtang.setAccount(account);
         newUtang.setTanggalTransaksi(request.getTanggalTransaksi());
         newUtang.setTipeTransaksi(request.getTipeTransaksi());
-        newUtang.setKategori(request.getKategori());
+        newUtang.setKategori(KategoriUtang.UTANG); // ✅ Set otomatis menjadi UTANG
         newUtang.setNominal(request.getNominal());
         newUtang.setKeterangan(request.getKeterangan());
         newUtang.setUser(loggedInUser);
@@ -60,7 +61,7 @@ public class UtangServiceImpl implements UtangService {
         existingUtang.setAccount(account);
         existingUtang.setTanggalTransaksi(request.getTanggalTransaksi());
         existingUtang.setTipeTransaksi(request.getTipeTransaksi());
-        existingUtang.setKategori(request.getKategori());
+        existingUtang.setKategori(KategoriUtang.UTANG); // ✅ Set otomatis menjadi UTANG
         existingUtang.setNominal(request.getNominal());
         existingUtang.setKeterangan(request.getKeterangan());
 

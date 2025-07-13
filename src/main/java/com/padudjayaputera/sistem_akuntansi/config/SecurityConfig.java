@@ -44,6 +44,15 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
+        // Special CORS configuration for health endpoints - allow all origins
+        CorsConfiguration healthCorsConfig = new CorsConfiguration();
+        healthCorsConfig.setAllowedOriginPatterns(Arrays.asList("*"));
+        healthCorsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        healthCorsConfig.setAllowedHeaders(List.of("*"));
+        healthCorsConfig.setAllowCredentials(false);
+        healthCorsConfig.setExposedHeaders(Arrays.asList("Content-Type"));
+        source.registerCorsConfiguration("/api/health/**", healthCorsConfig);
+
         return source;
     }
 
@@ -58,6 +67,7 @@ public class SecurityConfig {
                         // ----------------------------------------------------
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/piutang/raw-debug").permitAll()
+                        .requestMatchers("/api/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

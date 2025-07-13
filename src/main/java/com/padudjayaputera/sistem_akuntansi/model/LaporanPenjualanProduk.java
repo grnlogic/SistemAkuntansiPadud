@@ -19,10 +19,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "laporan_penjualan_sales")
+@Table(name = "laporan_penjualan_produk")
 @Getter
 @Setter
-public class LaporanPenjualanSales {
+public class LaporanPenjualanProduk {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,14 +35,15 @@ public class LaporanPenjualanSales {
     @JoinColumn(name = "salesperson_id", nullable = false)
     private Salesperson salesperson;
 
-    @Column(name = "target_penjualan")
-    private BigDecimal targetPenjualan;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "product_account_id", nullable = false)
+    private Account productAccount; // Tautan ke Akun COA Produk
 
-    @Column(name = "realisasi_penjualan")
-    private BigDecimal realisasiPenjualan;
+    @Column(name = "target_kuantitas")
+    private BigDecimal targetKuantitas;
 
-    @Column(name = "retur_penjualan")
-    private BigDecimal returPenjualan;
+    @Column(name = "realisasi_kuantitas")
+    private BigDecimal realisasiKuantitas;
 
     @Column(name = "keterangan_kendala")
     private String keteranganKendala;

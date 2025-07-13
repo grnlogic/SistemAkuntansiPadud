@@ -46,12 +46,13 @@ public class UtangController {
     /**
      * Tambah transaksi utang baru.
      * Hanya menerima data utang, bukan data entri harian umum.
+     * Kategori utang diset otomatis oleh sistem.
      */
     @PostMapping
     @PreAuthorize(HAS_ACCESS_TO_FINANCE)
     public ResponseEntity<UtangTransaksi> createUtang(@Valid @RequestBody UtangRequest request) {
-        // Validasi: pastikan field wajib utang terisi
-        if (request.getTipeTransaksi() == null || request.getKategori() == null) {
+        // Validasi: pastikan field wajib utang terisi (kategori diset otomatis)
+        if (request.getTipeTransaksi() == null) {
             return ResponseEntity.badRequest().build();
         }
         return new ResponseEntity<>(utangService.createUtang(request), HttpStatus.CREATED);

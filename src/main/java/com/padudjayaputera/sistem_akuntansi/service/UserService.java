@@ -1,6 +1,7 @@
 package com.padudjayaputera.sistem_akuntansi.service;
 
 import java.util.List;
+
 import com.padudjayaputera.sistem_akuntansi.model.User;
 
 public interface UserService {

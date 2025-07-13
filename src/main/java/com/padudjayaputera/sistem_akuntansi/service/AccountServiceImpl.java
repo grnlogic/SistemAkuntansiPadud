@@ -172,4 +172,38 @@ public class AccountServiceImpl implements AccountService {
             throw e;
         }
     }
+    
+    @Override
+    public List<Account> getAccountsByValueType(com.padudjayaputera.sistem_akuntansi.model.ValueType valueType) {
+        try {
+            System.out.println("=== SERVICE DEBUG: Getting accounts by value type: " + valueType + " ===");
+            
+            List<Account> accounts = accountRepository.findByValueType(valueType);
+            System.out.println("=== SERVICE DEBUG: Found " + accounts.size() + " accounts with value type " + valueType + " ===");
+            
+            return accounts;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error getting accounts by value type ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    
+    @Override
+    public List<Account> getAccountsByDivisionAndValueType(Integer divisionId, com.padudjayaputera.sistem_akuntansi.model.ValueType valueType) {
+        try {
+            System.out.println("=== SERVICE DEBUG: Getting accounts by division " + divisionId + " and value type " + valueType + " ===");
+            
+            List<Account> accounts = accountRepository.findByDivisionIdAndValueType(divisionId, valueType);
+            System.out.println("=== SERVICE DEBUG: Found " + accounts.size() + " accounts for division " + divisionId + " with value type " + valueType + " ===");
+            
+            return accounts;
+        } catch (Exception e) {
+            System.err.println("=== SERVICE ERROR: Error getting accounts by division and value type ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
 }

@@ -1,7 +1,5 @@
 package com.padudjayaputera.sistem_akuntansi.model;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,37 +17,27 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "laporan_gudang_harian")
+@Table(name = "notifications")
 @Getter
 @Setter
-public class LaporanGudangHarian {
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "tanggal_laporan", nullable = false)
-    private LocalDate tanggalLaporan;
-
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account; // Tautan ke Akun COA bahan baku
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // Pengguna yang menerima notifikasi
 
-    @Column(name = "barang_masuk")
-    private BigDecimal barangMasuk;
+    @Column(nullable = false)
+    private String message;
 
-    @Column(name = "pemakaian")
-    private BigDecimal pemakaian;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead = false;
 
-    @Column(name = "stok_akhir")
-    private BigDecimal stokAkhir;
-
-    @Column(name = "keterangan")
-    private String keterangan;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "created_by_user_id", nullable = false)
-    private User createdBy;
+    @Column(name = "link_url")
+    private String linkUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

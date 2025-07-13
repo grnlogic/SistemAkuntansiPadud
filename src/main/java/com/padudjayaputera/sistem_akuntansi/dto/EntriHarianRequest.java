@@ -65,13 +65,23 @@ public class EntriHarianRequest {
     @JsonProperty("shift")
     private String shift;
     
+    // ✅ NEW: Pemasaran-specific fields
+    @JsonProperty("salesUserId")
+    private Integer salesUserId;
+    
+    @JsonProperty("returPenjualan")
+    private BigDecimal returPenjualan;
+    
+    @JsonProperty("keteranganKendala")
+    private String keteranganKendala;
+    
     // ✅ Helper methods untuk validasi divisi-specific
     public boolean isKeuanganData() {
         return transactionType != null || saldoAkhir != null;
     }
     
     public boolean isPemasaranData() {
-        return targetAmount != null || realisasiAmount != null;
+        return targetAmount != null || realisasiAmount != null || salesUserId != null || returPenjualan != null;
     }
     
     public boolean isProduksiData() {
@@ -105,6 +115,9 @@ public class EntriHarianRequest {
                 ", attendanceStatus='" + attendanceStatus + '\'' +
                 ", absentCount=" + absentCount +
                 ", shift='" + shift + '\'' +
+                ", salesUserId=" + salesUserId +
+                ", returPenjualan=" + returPenjualan +
+                ", keteranganKendala='" + keteranganKendala + '\'' +
                 '}';
     }
 }

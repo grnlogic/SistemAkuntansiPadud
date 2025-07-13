@@ -20,24 +20,25 @@ public class LaporanGudangRequest {
     @NotNull
     private final Integer accountId; // ID dari bahan baku di tabel COA
 
-    private final BigDecimal stokAwal;
+    private final BigDecimal barangMasuk;
+
     private final BigDecimal pemakaian;
     private final BigDecimal stokAkhir;
-    private final String kondisiGudang;
+    private final String keterangan;
 
     @JsonCreator
     public LaporanGudangRequest(
             @JsonProperty("tanggalLaporan") LocalDate tanggalLaporan,
             @JsonProperty("accountId") Integer accountId,
-            @JsonProperty("stokAwal") BigDecimal stokAwal,
+            @JsonProperty("barangMasuk") BigDecimal barangMasuk,
             @JsonProperty("pemakaian") BigDecimal pemakaian,
             @JsonProperty("stokAkhir") BigDecimal stokAkhir,
-            @JsonProperty("kondisiGudang") String kondisiGudang) {
+            @JsonProperty("keterangan") String keterangan) {
         this.tanggalLaporan = tanggalLaporan;
         this.accountId = accountId;
-        this.stokAwal = stokAwal;
+        this.barangMasuk = barangMasuk;
         this.pemakaian = pemakaian;
         this.stokAkhir = stokAkhir;
-        this.kondisiGudang = kondisiGudang;
+        this.keterangan = keterangan;
     }
 }

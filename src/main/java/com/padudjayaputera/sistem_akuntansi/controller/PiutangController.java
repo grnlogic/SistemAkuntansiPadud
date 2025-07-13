@@ -46,12 +46,13 @@ public class PiutangController {
     /**
      * Tambah transaksi piutang baru.
      * Hanya menerima data piutang, bukan data entri harian umum.
+     * Kategori piutang diset otomatis oleh sistem.
      */
     @PostMapping
     @PreAuthorize(HAS_ACCESS_TO_PIUTANG)
     public ResponseEntity<PiutangTransaksi> createPiutang(@Valid @RequestBody PiutangRequest request) {
-        // Validasi: pastikan field wajib piutang terisi
-        if (request.getTipeTransaksi() == null || request.getKategori() == null) {
+        // Validasi: pastikan field wajib piutang terisi (kategori diset otomatis)
+        if (request.getTipeTransaksi() == null) {
             return ResponseEntity.badRequest().build();
         }
         PiutangTransaksi createdPiutang = piutangService.createPiutang(request);

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.padudjayaputera.sistem_akuntansi.dto.PiutangRequest;
 import com.padudjayaputera.sistem_akuntansi.model.Account;
+import com.padudjayaputera.sistem_akuntansi.model.KategoriPiutang;
 import com.padudjayaputera.sistem_akuntansi.model.PiutangTransaksi;
 import com.padudjayaputera.sistem_akuntansi.model.User;
 import com.padudjayaputera.sistem_akuntansi.repository.AccountRepository;
@@ -39,7 +40,7 @@ public class PiutangServiceImpl implements PiutangService {
         
         newPiutang.setTanggalTransaksi(request.getTanggalTransaksi());
         newPiutang.setTipeTransaksi(request.getTipeTransaksi());
-        newPiutang.setKategori(request.getKategori());
+        newPiutang.setKategori(KategoriPiutang.PIUTANG); // ✅ Set otomatis menjadi PIUTANG
         newPiutang.setNominal(request.getNominal());
         newPiutang.setKeterangan(request.getKeterangan());
         newPiutang.setUser(loggedInUser);
@@ -70,7 +71,7 @@ public class PiutangServiceImpl implements PiutangService {
         existingPiutang.setAccount(account);
         existingPiutang.setTanggalTransaksi(request.getTanggalTransaksi());
         existingPiutang.setTipeTransaksi(request.getTipeTransaksi());
-        existingPiutang.setKategori(request.getKategori());
+        existingPiutang.setKategori(KategoriPiutang.PIUTANG); // ✅ Set otomatis menjadi PIUTANG
         existingPiutang.setNominal(request.getNominal());
         existingPiutang.setKeterangan(request.getKeterangan());
 

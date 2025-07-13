@@ -228,4 +228,58 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+    
+    /**
+     * Endpoint khusus untuk alur 3 langkah: Step 3 - Pilih Produk (Account dengan ValueType KUANTITAS)
+     */
+    @GetMapping("/products")
+    @PreAuthorize("hasAuthority('SUPER_ADMIN') or (hasAuthority('ADMIN_DIVISI') and authentication.principal.division.name == 'DIVISI PEMASARAN & PENJUALAN')")
+    public ResponseEntity<List<AccountResponse>> getProductAccounts() {
+        try {
+            System.out.println("=== CONTROLLER DEBUG: GET /accounts/products called ===");
+            
+            List<Account> productAccounts = accountService.getAccountsByValueType(com.padudjayaputera.sistem_akuntansi.model.ValueType.KUANTITAS);
+            
+            List<AccountResponse> responses = productAccounts.stream()
+                .map(AccountResponse::new)
+                .collect(Collectors.toList());
+            
+            System.out.println("Found " + responses.size() + " product accounts");
+            return ResponseEntity.ok(responses);
+            
+        } catch (Exception e) {
+            System.err.println("=== CONTROLLER ERROR: Error getting product accounts ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Endpoint untuk mendapatkan product accounts berdasarkan division
+     */
+    @GetMapping("/products/by-division/{divisionId}")
+    @PreAuthorize("hasAuthority('SUPER_ADMIN') or (hasAuthority('ADMIN_DIVISI') and authentication.principal.division.id == #divisionId)")
+    public ResponseEntity<List<AccountResponse>> getProductAccountsByDivision(@PathVariable Integer divisionId) {
+        try {
+            System.out.println("=== CONTROLLER DEBUG: GET /accounts/products/by-division/" + divisionId + " called ===");
+            
+            List<Account> productAccounts = accountService.getAccountsByDivisionAndValueType(divisionId, com.padudjayaputera.sistem_akuntansi.model.ValueType.KUANTITAS);
+            
+            List<AccountResponse> responses = productAccounts.stream()
+                .map(AccountResponse::new)
+                .collect(Collectors.toList());
+            
+            System.out.println("Found " + responses.size() + " product accounts for division " + divisionId);
+            return ResponseEntity.ok(responses);
+            
+        } catch (Exception e) {
+            System.err.println("=== CONTROLLER ERROR: Error getting product accounts by division ===");
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

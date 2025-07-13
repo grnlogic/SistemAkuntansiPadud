@@ -46,4 +46,19 @@ public interface AccountService {
      * @param id ID akun yang akan dihapus.
      */
     void deleteAccount(Integer id);
+    
+    /**
+     * Mendapatkan akun berdasarkan value type.
+     * @param valueType ValueType yang dicari
+     * @return Daftar akun dengan value type tertentu
+     */
+    List<Account> getAccountsByValueType(com.padudjayaputera.sistem_akuntansi.model.ValueType valueType);
+    
+    /**
+     * Mendapatkan akun berdasarkan division dan value type.
+     * @param divisionId ID divisi
+     * @param valueType ValueType yang dicari
+     * @return Daftar akun dengan division dan value type tertentu
+     */
+    List<Account> getAccountsByDivisionAndValueType(Integer divisionId, com.padudjayaputera.sistem_akuntansi.model.ValueType valueType);
 }

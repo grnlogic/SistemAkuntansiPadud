@@ -105,6 +105,19 @@ public class EntriHarian {
     @JsonProperty("shift")
     private ShiftKerja shift;
 
+    // ✅ NEW: Pemasaran-specific fields
+    @Column(name = "sales_user_id")
+    @JsonProperty("salesUserId")
+    private Integer salesUserId;
+
+    @Column(name = "retur_penjualan", precision = 15, scale = 2)
+    @JsonProperty("returPenjualan")
+    private BigDecimal returPenjualan;
+
+    @Column(name = "keterangan_kendala", length = 500)
+    @JsonProperty("keteranganKendala")
+    private String keteranganKendala;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonProperty("createdAt")
     private LocalDateTime createdAt;
